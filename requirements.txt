@@ -8,7 +8,7 @@ psycopg2-binary==2.9.9
 
 # Data
 pandas==2.2.2
-numpy==1.26.4
+numpy==1.26.3
 
 # Job scraping
 python-jobspy==1.1.80
