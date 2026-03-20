@@ -29,13 +29,34 @@ REQUEST_DELAY_MIN   = 2.5        # seconds between requests (polite scraping)
 REQUEST_DELAY_MAX   = 5.0
 
 # ── Database ───────────────────────────────────────────────────
-DB_CONFIG = {
-    "host":     os.getenv("DB_HOST",     "localhost"),
-    "port":     os.getenv("DB_PORT",     "5432"),
-    "database": os.getenv("DB_NAME",     "job_market"),
-    "user":     os.getenv("DB_USER",     "postgres"),
-    "password": os.getenv("DB_PASSWORD", "Kafka@2104"),
-}
+# Railway provides DATABASE_URL as a full connection string.
+# Fall back to individual env vars (or local defaults) for local dev.
+def _build_db_config():
+    url = os.getenv("DATABASE_URL", "")
+    if url:
+        # Parse postgres://user:password@host:port/dbname
+        import re as _re
+        m = _re.match(
+            r"postgres(?:ql)?://([^:]+):([^@]+)@([^:/]+):(\d+)/(.+)",
+            url
+        )
+        if m:
+            return {
+                "user":     m.group(1),
+                "password": m.group(2),
+                "host":     m.group(3),
+                "port":     m.group(4),
+                "database": m.group(5),
+            }
+    return {
+        "host":     os.getenv("DB_HOST",     "localhost"),
+        "port":     os.getenv("DB_PORT",     "5432"),
+        "database": os.getenv("DB_NAME",     "job_market"),
+        "user":     os.getenv("DB_USER",     "postgres"),
+        "password": os.getenv("DB_PASSWORD", "Kafka@2104"),
+    }
+
+DB_CONFIG = _build_db_config()
 
 # ── Paths ──────────────────────────────────────────────────────
 BASE_DIR       = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))

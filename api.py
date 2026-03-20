@@ -306,9 +306,13 @@ def _load_scrape_config():
         try:
             with open(CONFIG_PATH) as f:
                 stored = json.load(f)
-                return {**default, **stored}
+                default = {**default, **stored}
         except Exception:
             pass
+    # Allow OPENAI_API_KEY env var to override (used on Railway / any cloud host)
+    env_key = os.getenv("OPENAI_API_KEY", "").strip()
+    if env_key:
+        default["openai_api_key"] = env_key
     return default
 
 # ── Endpoints ─────────────────────────────────────────────────────────────────
