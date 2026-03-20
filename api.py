@@ -1324,6 +1324,11 @@ _here     = os.path.dirname(os.path.abspath(__file__))
 _dash_dir = os.path.join(_here, "dashboard_new")
 os.makedirs(_dash_dir, exist_ok=True)
 
+@app.get("/health")
+def health_check():
+    """Simple liveness probe — always returns OK so Railway startup succeeds."""
+    return {"status": "ok"}
+
 @app.get("/")
 def serve_root():
     f = os.path.join(_dash_dir, "index.html")
