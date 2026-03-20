@@ -1,0 +1,30 @@
+# ── Secrets & local config ────────────────────────────────────────────────────
+scrape_config.json          # Contains OpenAI API key — never commit this!
+.env
+*.env
+
+# ── Python ────────────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+env/
+pip-wheel-metadata/
+*.egg-info/
+dist/
+build/
+
+# ── Logs & data ───────────────────────────────────────────────────────────────
+logs/
+data/raw/
+data/processed/
+*.log
+
+# ── IDE / OS ──────────────────────────────────────────────────────────────────
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

@@ -1,0 +1,19 @@
+{
+  "roles": [
+    "Data Engineer",
+    "Data Analyst",
+    "Data Scientist",
+    "Machine Learning Engineer",
+    "AI Engineer"
+  ],
+  "priority_locations": [
+    "San Francisco, CA",
+    "Seattle, WA",
+    "New York, NY",
+    "Austin, TX",
+    "Remote"
+  ],
+  "schedule_enabled": false,
+  "schedule_interval_hours": 24,
+  "openai_api_key": "sk-your-openai-api-key-here"
+}
