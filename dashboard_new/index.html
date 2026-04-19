@@ -2190,6 +2190,8 @@ function PipelinePage() {
   const [message,      setMessage]     = useState('');
   const [ts,           setTs]          = useState(0);
   const [config,       setConfig]      = useState(null);
+  const configRef = React.useRef(null);
+  const setConfigAndRef = (cfg) => { configRef.current = cfg; setConfig(cfg); };
   const [newRole,      setNewRole]     = useState('');
   const [newLoc,       setNewLoc]      = useState('');
   const [cfgSaved,     setCfgSaved]    = useState('');
@@ -2211,7 +2213,7 @@ function PipelinePage() {
       if(db) setDbStats(db);
       if(Array.isArray(hist)) setHistory(hist);
       if(status) { setRunning(status.running); setSchedStatus(status); }
-      if(cfg) { setConfig(cfg); setKeySet(cfg.openai_key_set || false); }
+      if(cfg) { setConfigAndRef(cfg); setKeySet(cfg.openai_key_set || false); }
       setTs(Date.now());
     });
   };
@@ -2245,14 +2247,15 @@ function PipelinePage() {
   };
 
   const addRole = async () => {
-    if (!newRole.trim() || !config) return;
+    if (!newRole.trim() || !configRef.current) return;
+    const cur      = configRef.current;
     const incoming = newRole.split(',').map(r => r.trim()).filter(r => r.length > 0);
-    const existing = config.roles || [];
+    const existing = cur.roles || [];
     const merged   = [...existing, ...incoming.filter(r => !existing.includes(r))];
-    const updated  = { ...config, roles: merged };
+    const updated  = { ...cur, roles: merged };
     const res = await safeApi('/api/config', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(updated) });
     if (res && res.status === 'saved') {
-      setConfig(updated); setNewRole('');
+      setConfigAndRef(updated); setNewRole('');
       setCfgSaved(`${incoming.length > 1 ? incoming.length + ' roles' : '1 role'} added!`);
     } else {
       setCfgSaved('❌ Failed to save — check file permissions on server');
@@ -2261,12 +2264,15 @@ function PipelinePage() {
   };
 
   const removeRole = async (role) => {
-    if (!config) return;
-    const updated = { ...config, roles: config.roles.filter(r => r !== role) };
+    if (!configRef.current) return;
+    const cur     = configRef.current;
+    const updated = { ...cur, roles: cur.roles.filter(r => r !== role) };
+    setConfigAndRef(updated); // update UI immediately
     const res = await safeApi('/api/config', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(updated) });
     if (res && res.status === 'saved') {
-      setConfig(updated); setCfgSaved('Role removed!');
+      setCfgSaved('Role removed!');
     } else {
+      setConfigAndRef(cur); // revert on failure
       setCfgSaved('❌ Failed to save — check file permissions on server');
     }
     setTimeout(()=>setCfgSaved(''),3000);
