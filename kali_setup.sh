@@ -121,6 +121,23 @@ echo ">>> [6/8] Creating required directories..."
 mkdir -p "$APP_DIR/logs" "$APP_DIR/data/raw" "$APP_DIR/data/processed"
 echo "    OK: Directories ready"
 
+# ── Step 6b: Import existing data backup (if present) ─────────
+BACKUP_FILE="$(dirname "$0")/job_market_backup.sql"
+if [ -f "$BACKUP_FILE" ]; then
+    echo ""
+    echo ">>> Found job_market_backup.sql — importing existing data..."
+    BACKUP_SIZE=$(du -sh "$BACKUP_FILE" | cut -f1)
+    echo "    Backup size: $BACKUP_SIZE"
+    sudo -u postgres psql -d "$DB_NAME" -f "$BACKUP_FILE" -q
+    JOB_COUNT=$(sudo -u postgres psql -d "$DB_NAME" -t -c "SELECT COUNT(*) FROM jobs;" 2>/dev/null | tr -d ' ' || echo "unknown")
+    echo "    OK: Data imported — $JOB_COUNT jobs loaded"
+else
+    echo ""
+    echo "    INFO: No backup file found — starting with empty database."
+    echo "    Tip: To import existing data, place job_market_backup.sql"
+    echo "         next to this script and run it again."
+fi
+
 # ── Step 7: systemd service ───────────────────────────────────
 echo ""
 echo ">>> [7/8] Installing systemd service..."
