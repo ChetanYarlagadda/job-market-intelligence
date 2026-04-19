@@ -29,11 +29,11 @@ CREATE TABLE IF NOT EXISTS jobs (
     salary_max      NUMERIC(12,2),
     salary_currency VARCHAR(8)   DEFAULT 'USD',
     salary_period   VARCHAR(16),                    -- hourly | annual
-    job_type        VARCHAR(32),                    -- full-time | contract | etc.
-    seniority       VARCHAR(32),                    -- junior | mid | senior | lead
+    job_type        VARCHAR(128),                   -- full-time | contract | etc.
+    seniority       VARCHAR(128),                   -- junior | mid | senior | lead
     description     TEXT,
     url             TEXT,
-    source          VARCHAR(32)  NOT NULL,          -- indeed | linkedin | glassdoor
+    source          VARCHAR(128) NOT NULL,          -- indeed | linkedin | glassdoor
     search_query    TEXT,
     search_location TEXT,
     date_posted     DATE,
@@ -53,7 +53,7 @@ CREATE TABLE IF NOT EXISTS job_skills (
 CREATE TABLE IF NOT EXISTS scrape_runs (
     id            SERIAL PRIMARY KEY,
     run_timestamp TIMESTAMP DEFAULT NOW(),
-    source        VARCHAR(32),
+    source        VARCHAR(128),
     query         TEXT,
     location      TEXT,
     jobs_found    INTEGER DEFAULT 0,
@@ -109,6 +109,24 @@ class DatabaseManager:
             self.conn.rollback()
             logger.error(f"❌ Schema setup failed: {e}")
             raise
+        # Run migrations to widen columns on existing databases
+        self._run_migrations()
+
+    def _run_migrations(self):
+        """Safe migrations — widen columns that were too narrow."""
+        migrations = [
+            "ALTER TABLE jobs ALTER COLUMN job_type   TYPE VARCHAR(128)",
+            "ALTER TABLE jobs ALTER COLUMN seniority  TYPE VARCHAR(128)",
+            "ALTER TABLE jobs ALTER COLUMN source     TYPE VARCHAR(128)",
+            "ALTER TABLE scrape_runs ALTER COLUMN source TYPE VARCHAR(128)",
+        ]
+        for sql in migrations:
+            try:
+                with self.conn.cursor() as cur:
+                    cur.execute(sql)
+                self.conn.commit()
+            except Exception:
+                self.conn.rollback()  # Already correct type — skip silently
 
     def insert_jobs(self, jobs: list[dict]) -> tuple[int, int]:
         """
@@ -132,10 +150,16 @@ class DatabaseManager:
             )
             ON CONFLICT (job_id) DO NOTHING;
         """
+        def _trunc(val, n):
+            return val[:n] if isinstance(val, str) else val
+
         inserted = 0
         try:
             with self.conn.cursor() as cur:
                 for job in jobs:
+                    job['job_type']  = _trunc(job.get('job_type'),  128)
+                    job['seniority'] = _trunc(job.get('seniority'), 128)
+                    job['source']    = _trunc(job.get('source'),    128)
                     cur.execute(sql, job)
                     inserted += cur.rowcount
             self.conn.commit()
