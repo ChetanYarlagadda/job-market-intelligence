@@ -2246,9 +2246,13 @@ function PipelinePage() {
 
   const addRole = async () => {
     if (!newRole.trim() || !config) return;
-    const updated = { ...config, roles: [...(config.roles||[]), newRole.trim()] };
+    const incoming = newRole.split(',').map(r => r.trim()).filter(r => r.length > 0);
+    const existing = config.roles || [];
+    const merged   = [...existing, ...incoming.filter(r => !existing.includes(r))];
+    const updated  = { ...config, roles: merged };
     await safeApi('/api/config', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(updated) });
-    setConfig(updated); setNewRole(''); setCfgSaved('Role added!');
+    setConfig(updated); setNewRole('');
+    setCfgSaved(`${incoming.length > 1 ? incoming.length + ' roles' : '1 role'} added!`);
     setTimeout(()=>setCfgSaved(''),2000);
   };
 
@@ -2468,7 +2472,7 @@ function PipelinePage() {
               <div className="role-add-row">
                 <input
                   className="role-add-input"
-                  placeholder="Add new role (e.g. Analytics Engineer)…"
+                  placeholder="e.g. Analytics Engineer, MLOps Engineer, Data Engineer…"
                   value={newRole}
                   onChange={e=>setNewRole(e.target.value)}
                   onKeyDown={e=>e.key==='Enter'&&addRole()}
@@ -2476,7 +2480,7 @@ function PipelinePage() {
                 <button className="btn-add" onClick={addRole}>+ Add</button>
               </div>
               <div style={{fontSize:11,color:'#2d4a6a',marginTop:8}}>
-                Changes take effect on the next pipeline run.
+                Tip: Enter multiple roles separated by commas to add them all at once. Changes take effect on the next pipeline run.
               </div>
             </>
           ) : <Spinner/>}
