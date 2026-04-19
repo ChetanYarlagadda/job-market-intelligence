@@ -2250,18 +2250,26 @@ function PipelinePage() {
     const existing = config.roles || [];
     const merged   = [...existing, ...incoming.filter(r => !existing.includes(r))];
     const updated  = { ...config, roles: merged };
-    await safeApi('/api/config', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(updated) });
-    setConfig(updated); setNewRole('');
-    setCfgSaved(`${incoming.length > 1 ? incoming.length + ' roles' : '1 role'} added!`);
-    setTimeout(()=>setCfgSaved(''),2000);
+    const res = await safeApi('/api/config', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(updated) });
+    if (res && res.status === 'saved') {
+      setConfig(updated); setNewRole('');
+      setCfgSaved(`${incoming.length > 1 ? incoming.length + ' roles' : '1 role'} added!`);
+    } else {
+      setCfgSaved('❌ Failed to save — check file permissions on server');
+    }
+    setTimeout(()=>setCfgSaved(''),3000);
   };
 
   const removeRole = async (role) => {
     if (!config) return;
     const updated = { ...config, roles: config.roles.filter(r => r !== role) };
-    await safeApi('/api/config', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(updated) });
-    setConfig(updated); setCfgSaved('Role removed!');
-    setTimeout(()=>setCfgSaved(''),2000);
+    const res = await safeApi('/api/config', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(updated) });
+    if (res && res.status === 'saved') {
+      setConfig(updated); setCfgSaved('Role removed!');
+    } else {
+      setCfgSaved('❌ Failed to save — check file permissions on server');
+    }
+    setTimeout(()=>setCfgSaved(''),3000);
   };
 
   const toggleSchedule = async () => {
